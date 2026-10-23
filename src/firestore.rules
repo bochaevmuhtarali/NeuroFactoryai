@@ -1,0 +1,187 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default deny all unspecified collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Health check prober endpoint
+    match /test/{docId} {
+      allow read: if true;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Verified Founder/Admin email check (no database lookup overhead for list queries)
+    function isEmailAdmin() {
+      return isSignedIn() &&
+             (
+               request.auth.token.email == 'bochaevmuhtarali@gmail.com' ||
+               request.auth.token.email == 'bochaevmuhtarali@mail.ru' ||
+               request.auth.token.email == 'muhtaraliboc@gmail.com'
+             );
+    }
+
+    function isAdmin() {
+      return isEmailAdmin() ||
+             (isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidFactoryProfile(data) {
+      return data.userId is string && data.userId.size() <= 128 && data.userId == request.auth.uid &&
+             data.factoryName is string && data.factoryName.size() >= 2 && data.factoryName.size() <= 120 &&
+             data.region is string && data.region.size() >= 2 && data.region.size() <= 80 &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 120)) &&
+             (!('emailVerified' in data) || (data.emailVerified is bool)) &&
+             (!('hasConnectedHardware' in data) || (data.hasConnectedHardware is bool)) &&
+             (!('isNewAccount' in data) || (data.isNewAccount is bool)) &&
+             (!('role' in data) || (data.role is string && data.role.size() <= 40)) &&
+             (!('industrySector' in data) || (data.industrySector is string && data.industrySector.size() <= 60)) &&
+             (!('contactPerson' in data) || (data.contactPerson is string && data.contactPerson.size() <= 100)) &&
+             (!('contactPhone' in data) || (data.contactPhone is string && data.contactPhone.size() <= 32)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64)) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidAdminProfile(data) {
+      return data.userId is string && data.userId.size() <= 128 && data.userId == request.auth.uid &&
+             data.email is string && data.email.size() <= 120 &&
+             data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 120 &&
+             (!('role' in data) || (data.role is string && data.role.size() <= 80)) &&
+             (!('accessLevel' in data) || (data.accessLevel is int)) &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 32)) &&
+             (!('department' in data) || (data.department is string && data.department.size() <= 100)) &&
+             (!('twoFactorEnabled' in data) || (data.twoFactorEnabled is bool)) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidSupportTicket(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             data.userEmail is string && data.userEmail.size() <= 120 &&
+             data.subject is string && data.subject.size() >= 2 && data.subject.size() <= 200 &&
+             data.message is string && data.message.size() >= 2 && data.message.size() <= 5000 &&
+             (!('userName' in data) || (data.userName is string && data.userName.size() <= 120)) &&
+             (!('factoryName' in data) || (data.factoryName is string && data.factoryName.size() <= 120)) &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 32)) &&
+             (!('category' in data) || (data.category is string && data.category.size() <= 60)) &&
+             (!('priority' in data) || (data.priority is string && data.priority.size() <= 20)) &&
+             (!('status' in data) || (data.status is string && data.status.size() <= 30)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64)) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64)) &&
+             (!('replies' in data) || (data.replies is list && data.replies.size() <= 100));
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() <= 128 && data.userId == request.auth.uid &&
+             data.email is string && data.email.size() <= 120 &&
+             (!('emailVerified' in data) || (data.emailVerified is bool)) &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 120)) &&
+             (!('factoryName' in data) || (data.factoryName is string && data.factoryName.size() <= 120)) &&
+             (!('region' in data) || (data.region is string && data.region.size() <= 80)) &&
+             (!('role' in data) || (data.role is string && data.role.size() <= 40)) &&
+             (!('hasConnectedHardware' in data) || (data.hasConnectedHardware is bool)) &&
+             (!('isNewAccount' in data) || (data.isNewAccount is bool)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64)) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    // Users Collection: Directory of registered people and enterprise user accounts
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().keys().hasAll(['userId', 'email']) &&
+                       incoming().keys().hasOnly(['userId', 'email', 'emailVerified', 'displayName', 'factoryName', 'region', 'role', 'hasConnectedHardware', 'isNewAccount', 'createdAt', 'updatedAt']);
+
+      allow update: if (isOwner(userId) || isAdmin()) &&
+                       isValidId(userId) &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['emailVerified', 'displayName', 'factoryName', 'region', 'role', 'hasConnectedHardware', 'isNewAccount', 'updatedAt']);
+
+      allow delete: if isAdmin() && isValidId(userId);
+    }
+
+    // Factory Profile Collection: Users can ONLY read, create, and update their own factory profile
+    match /factories/{factoryId} {
+      allow get: if isOwner(factoryId) || isAdmin();
+      allow list: if isAdmin(); // Only platform administrators can view factory roster
+
+      allow create: if isOwner(factoryId) &&
+                       isValidId(factoryId) &&
+                       isValidFactoryProfile(incoming()) &&
+                       incoming().keys().hasAll(['userId', 'factoryName', 'region']) &&
+                       incoming().keys().hasOnly(['userId', 'email', 'emailVerified', 'factoryName', 'region', 'industrySector', 'contactPerson', 'contactPhone', 'hasConnectedHardware', 'isNewAccount', 'role', 'createdAt', 'updatedAt']);
+
+      allow update: if (isOwner(factoryId) || isAdmin()) &&
+                       isValidId(factoryId) &&
+                       isValidFactoryProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['factoryName', 'region', 'emailVerified', 'industrySector', 'contactPerson', 'contactPhone', 'hasConnectedHardware', 'isNewAccount', 'role', 'updatedAt']);
+
+      allow delete: if (isOwner(factoryId) || isAdmin()) && isValidId(factoryId);
+    }
+
+    // Admin Profile Collection: Access strictly gated to authenticated administrators
+    match /admins/{adminId} {
+      allow get: if (isOwner(adminId) && isAdmin());
+      allow list: if isAdmin();
+
+      allow create: if isOwner(adminId) &&
+                       isAdmin() &&
+                       isValidId(adminId) &&
+                       isValidAdminProfile(incoming()) &&
+                       incoming().keys().hasAll(['userId', 'email', 'fullName']) &&
+                       incoming().keys().hasOnly(['userId', 'email', 'fullName', 'role', 'accessLevel', 'phone', 'department', 'twoFactorEnabled', 'updatedAt']);
+
+      allow update: if isOwner(adminId) &&
+                       isAdmin() &&
+                       isValidId(adminId) &&
+                       isValidAdminProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'role', 'accessLevel', 'phone', 'department', 'twoFactorEnabled', 'updatedAt']);
+
+      allow delete: if false; // Deleting root admin is forbidden
+    }
+
+    // Support Tickets Collection: Accessible by ticket owners and Platform Founder / Admins
+    match /support_tickets/{ticketId} {
+      allow get: if isValidId(ticketId);
+      allow list: if isAdmin() || (isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.userEmail == request.auth.token.email));
+
+      allow create: if isValidId(ticketId) &&
+                       isValidSupportTicket(incoming()) &&
+                       incoming().keys().hasAll(['userId', 'userEmail', 'subject', 'message']);
+
+      allow update: if isValidId(ticketId) &&
+                       isValidSupportTicket(incoming()) &&
+                       (isAdmin() || (isSignedIn() && (incoming().userId == existing().userId || incoming().userEmail == existing().userEmail)));
+
+      allow delete: if isAdmin() && isValidId(ticketId);
+    }
+  }
+}

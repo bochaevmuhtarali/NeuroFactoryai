@@ -1,0 +1,6 @@
+{
+  "name": "NeuroFactory AI",
+  "description": "Промышленная ИИ-платформа: компьютерное зрение SafeVision (СИЗ), эко-мониторинг EcoPredict и предиктивная аналитика отказов FailPredict на русском и казахском языках.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

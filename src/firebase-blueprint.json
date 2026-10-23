@@ -1,0 +1,280 @@
+{
+  "entities": {
+    "FactoryProfile": {
+      "title": "FactoryProfile",
+      "description": "User industrial enterprise profile storing factory name, region in Kazakhstan, sector, and contact information.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the factory administrator",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "description": "Factory lead engineer email address",
+          "maxLength": 120
+        },
+        "emailVerified": {
+          "type": "boolean",
+          "description": "Whether user email has been verified"
+        },
+        "factoryName": {
+          "type": "string",
+          "description": "Official name of the industrial facility or plant",
+          "maxLength": 120
+        },
+        "region": {
+          "type": "string",
+          "description": "Administrative region or city in Kazakhstan",
+          "maxLength": 80
+        },
+        "industrySector": {
+          "type": "string",
+          "description": "Industry classification: metallurgy, oilgas, mining, machinery, chemical, energy",
+          "maxLength": 60
+        },
+        "contactPerson": {
+          "type": "string",
+          "description": "Lead engineer or safety director name",
+          "maxLength": 100
+        },
+        "contactPhone": {
+          "type": "string",
+          "description": "Emergency dispatch phone number",
+          "maxLength": 32
+        },
+        "hasConnectedHardware": {
+          "type": "boolean",
+          "description": "Whether industrial cameras, sensors, and machines are connected; false for fresh new accounts"
+        },
+        "isNewAccount": {
+          "type": "boolean",
+          "description": "Indicates if the user account is freshly created with zero telemetry"
+        },
+        "role": {
+          "type": "string",
+          "description": "System role: admin or enterprise_user",
+          "maxLength": 40
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp when the factory profile was registered"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp of the latest profile modification"
+        }
+      },
+      "required": ["userId", "factoryName", "region"]
+    },
+    "AdminProfile": {
+      "title": "AdminProfile",
+      "description": "Platform administrator personal profile with credentials, department, and system diagnostics",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the platform administrator",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "description": "Administrator email address",
+          "maxLength": 120
+        },
+        "fullName": {
+          "type": "string",
+          "description": "Administrator full name",
+          "maxLength": 120
+        },
+        "role": {
+          "type": "string",
+          "description": "Administrative role title",
+          "maxLength": 80
+        },
+        "accessLevel": {
+          "type": "integer",
+          "description": "Security clearance level from 1 to 5"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Administrator emergency telephone",
+          "maxLength": 32
+        },
+        "department": {
+          "type": "string",
+          "description": "Assigned administrative engineering department",
+          "maxLength": 100
+        },
+        "twoFactorEnabled": {
+          "type": "boolean",
+          "description": "Whether two-factor authentication is active"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp of last profile update"
+        }
+      },
+      "required": ["userId", "email", "fullName"]
+    },
+    "SupportTicket": {
+      "title": "SupportTicket",
+      "description": "Technical support ticket created by enterprise operators or users, routed to project founder profile",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique ticket identifier",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID or guest identifier",
+          "maxLength": 128
+        },
+        "userEmail": {
+          "type": "string",
+          "description": "Requester contact email",
+          "maxLength": 120
+        },
+        "userName": {
+          "type": "string",
+          "description": "Requester full name",
+          "maxLength": 120
+        },
+        "factoryName": {
+          "type": "string",
+          "description": "Enterprise or plant facility name",
+          "maxLength": 120
+        },
+        "phone": {
+          "type": "string",
+          "description": "Contact phone number",
+          "maxLength": 32
+        },
+        "category": {
+          "type": "string",
+          "description": "safevision, ecopredict, failpredict, hardware, integration, general",
+          "maxLength": 60
+        },
+        "priority": {
+          "type": "string",
+          "description": "low, normal, high, urgent",
+          "maxLength": 20
+        },
+        "subject": {
+          "type": "string",
+          "description": "Ticket summary topic",
+          "maxLength": 200
+        },
+        "message": {
+          "type": "string",
+          "description": "Detailed incident or inquiry description",
+          "maxLength": 5000
+        },
+        "status": {
+          "type": "string",
+          "description": "open, in_progress, resolved",
+          "maxLength": 30
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when ticket was created"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when ticket was last modified"
+        },
+        "replies": {
+          "type": "array",
+          "description": "List of communication message reply objects"
+        }
+      },
+      "required": ["userId", "userEmail", "subject", "message"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile record storing account identity, factory assignment, region, and security status",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address",
+          "maxLength": 120
+        },
+        "emailVerified": {
+          "type": "boolean",
+          "description": "Whether user email is verified"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User display or contact name",
+          "maxLength": 120
+        },
+        "factoryName": {
+          "type": "string",
+          "description": "Assigned enterprise factory name",
+          "maxLength": 120
+        },
+        "region": {
+          "type": "string",
+          "description": "Assigned region or city",
+          "maxLength": 80
+        },
+        "role": {
+          "type": "string",
+          "description": "enterprise_user, enterprise_lead, or admin",
+          "maxLength": 40
+        },
+        "hasConnectedHardware": {
+          "type": "boolean",
+          "description": "Hardware connection status (false for fresh zero-state accounts)"
+        },
+        "isNewAccount": {
+          "type": "boolean",
+          "description": "Whether the user account is freshly created"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Account registration timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last profile update timestamp"
+        }
+      },
+      "required": ["userId", "email"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Directory of registered people and enterprise user accounts"
+    },
+    "/factories/{factoryId}": {
+      "schema": "FactoryProfile",
+      "description": "Stores individual factory profile data isolated per authenticated user ID"
+    },
+    "/admins/{adminId}": {
+      "schema": "AdminProfile",
+      "description": "Stores administrator personal profile data protected by admin RBAC"
+    },
+    "/support_tickets/{ticketId}": {
+      "schema": "SupportTicket",
+      "description": "Stores user and plant technical support tickets routed to the project founder profile"
+    }
+  }
+}
